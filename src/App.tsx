@@ -1,39 +1,22 @@
 import React from 'react'
 import {
   Layout, Divider,
-  Collapse,
-  Tag, Spin,
 } from 'antd'
 import {
   MenuUnfoldOutlined, MenuFoldOutlined,
-  SyncOutlined,
 } from '@ant-design/icons'
 import './App.css'
 
 
+import TagList from './pages/TagList'
 import RepositoryList from './pages/RepositoryList'
 import Readme from './pages/Readme'
 
 import { Repository } from './lib/github/types'
-import { stringToNumbers } from './lib/string'
 import userStars from './data/user-stars.json'
 
 const { Header, Sider } = Layout
-const { Panel } = Collapse
 
-const tagColors = [
-  "magenta",
-  "red",
-  "volcano",
-  "orange",
-  "gold",
-  "lime",
-  "green",
-  "cyan",
-  "blue",
-  "geekblue",
-  "purple",
-]
 
 class App extends React.Component<{}, {
   collapsed: boolean
@@ -73,12 +56,10 @@ class App extends React.Component<{}, {
     this.setState({ stars: userStars })
   }
 
-  computeTagColor = (s: string) => {
-    return stringToNumbers(s || ' ').reduce((l, r) => l + r) % tagColors.length
-  }
-
   render = () => (
     <Layout>
+
+      {/* all tags */}
       <Sider
         trigger={null}
         collapsible
@@ -95,34 +76,9 @@ class App extends React.Component<{}, {
           borderRightStyle: 'solid',
         }}
       >
-        {/* all tags */}
-        <Panel key="-1" header={(
-          <div style={{ padding: 20 }}>
-            <div style={{ display: 'flex' }}>
-              <span style={{ flex: 1, fontWeight: 'bold' }}>Stars</span>
-              <span>
-                <SyncOutlined spin={this.state.reloading} onClick={() => {
-                  this.setState({ reloading: !this.state.reloading })
-                }} />
-              </span>
-            </div>
-            <div>
-              <div>All Stars</div>
-              <div>Untagged Stars</div>
-            </div>
-          </div>
-        )}>
-          <Spin />
-        </Panel>
-        <Collapse defaultActiveKey={this.state.groups.map((row, i) => i)} ghost>
-          {this.state.groups.map((g, i) => (
-            <Panel header={g.title} style={{ textTransform: 'uppercase', fontWeight: 'bold' }} key={i}>
-              {g.tags.map((t, j) => (
-                <Tag key={j} color={tagColors[this.computeTagColor(t)]} style={{ textTransform: 'none' }}>{t}</Tag>
-              ))}
-            </Panel>
-          ))}
-        </Collapse>
+        <TagList reloading={this.state.reloading} groups={this.state.groups} onReloadClick={() => {
+          this.setState({ reloading: !this.state.reloading })
+        }} />
       </Sider>
 
       {/* repository list */}
@@ -143,6 +99,8 @@ class App extends React.Component<{}, {
           this.setState({ selectedRepository: this.state.stars[index] })
         }} />
       </Sider>
+
+      {/* readme content */}
       <Layout
         style={{
           overflow: 'auto',

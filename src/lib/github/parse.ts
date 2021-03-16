@@ -29,6 +29,11 @@ const renderGitHubURL = (node: HTMLElement, repo: Repository) => {
       if (uri && !uri.startsWith('http') && !uri.startsWith('#')) {
         c.setAttribute('href', githubUrl(uri, repo))
       }
+      // use new window to open outlink
+      if (uri && uri.startsWith('http')) {
+        c.setAttribute('target', '_blank')
+        c.setAttribute('rel', 'noreferrer')
+      }
     }
   })
   return node.innerHTML
