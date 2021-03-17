@@ -30,7 +30,7 @@ const computeTagColor = (s: string): string => {
 }
 
 const TagList = (props: {
-  reloading: boolean
+  loading: boolean
   groups: {
     title: string
     tags: string[]
@@ -43,7 +43,7 @@ const TagList = (props: {
         <div style={{ display: 'flex' }}>
           <span style={{ flex: 1, fontWeight: 'bold' }}>Stars</span>
           <span>
-            <SyncOutlined spin={props.reloading} onClick={props.onReloadClick} />
+            <SyncOutlined spin={props.loading} onClick={props.onReloadClick} />
           </span>
         </div>
         <div>

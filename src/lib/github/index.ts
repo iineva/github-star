@@ -1,7 +1,7 @@
 
-import { Repository } from './types'
+import { Repository } from './graphql'
 import { request } from '@octokit/request'
-import { decode } from 'js-base64'
+import renderGitHubURL from './parse'
 
 export const user = (login: string) => request('GET /users/{login}', {
   login
@@ -13,21 +13,18 @@ export const userStars = (login: string, page: number = 1) =>
     page,
   }).then(json => json.data)
 
-export const repoReadme = (repo: Repository) => request('GET /repos/{owner}/{repo}/readme', {
-  repo: repo.name,
-  owner: repo.owner.login,
-})
-  .then(json => json.data).then(data => {
-    return request('POST /markdown', {
-      text: decode(data.content),
-    })
-  })
+export const readmeToHTML = (repo: Repository, text: string) => request('POST /markdown', { text: text })
   .then(json => json.data)
+  .then(readmeHTML => {
+    const domparser = new DOMParser()
+    const doc = domparser.parseFromString(readmeHTML, 'text/html')
+    return renderGitHubURL(doc.body, repo)
+  })
 
 const github = {
   user,
   userStars,
-  repoReadme,
+  readmeToHTML,
 }
 
 export default github

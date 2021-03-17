@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from 'react'
-import { Repository } from '../lib/github/types'
 import {
   Empty,
   Skeleton,
@@ -11,14 +10,15 @@ import {
 } from '@ant-design/icons'
 
 import github from '../lib/github'
-import renderGitHubURL from '../lib/github/parse'
+import { fetchREADME } from '../lib/github/graphql'
+import { StarredRepositoryEdge } from '../lib/github/graphql'
 
 const readmeCache: {
   [key: string]: string
 } = {}
 
 const ReadmeComponent = (props: {
-  repo?: Repository
+  repo?: StarredRepositoryEdge
 }) => {
 
   const [markdown, setMarkdown] = useState('')
@@ -33,26 +33,39 @@ const ReadmeComponent = (props: {
     setLoading(true);
     (async () => {
 
+      if (!props.repo) {
+        return
+      }
+
+      const repo = props.repo.node
+
       // match cache
-      if (readmeCache[props.repo!.full_name]) {
-        setMarkdown(readmeCache[props.repo!.full_name])
+      if (readmeCache[repo.nameWithOwner]) {
+        setMarkdown(readmeCache[repo.nameWithOwner])
         setLoading(false)
         return
       }
 
-      const data = await github.repoReadme(props.repo!)
-      const domparser = new DOMParser()
-      const doc = domparser.parseFromString(data, 'text/html')
-      const m = renderGitHubURL(doc.body, props.repo!)
-      const key = props.repo!.full_name || ''
-      readmeCache[key] = m
-      setMarkdown(m)
+      const readme = await fetchREADME({
+        owner: repo.owner.login,
+        name: repo.name,
+      })
+
+      if (!readme.data || !readme.data.repository) {
+        throw new Error('error!!')
+      }
+
+      const r = (readme.data.repository.README_md || readme.data.repository.readme_md || readme.data.repository.readme) || { text: '' }
+      const html = await github.readmeToHTML(repo, r.text)
+      const key = repo.nameWithOwner || ''
+      readmeCache[key] = html
+      setMarkdown(html)
       setLoading(false)
     })()
   }, [props.repo])
 
   return (
-    <div style={{ padding: 20, paddingTop: 0, background: '#fff' }} ref={markdownRef} className="markdown-body">
+    <div style={{ padding: 20, background: '#fff' }} ref={markdownRef} className="markdown-body">
       {(!props.repo || !markdown) && (!loading) ? (
         <div style={{
           display: 'flex',
@@ -73,7 +86,7 @@ const ReadmeComponent = (props: {
                   height: 40,
                   width: 40,
                   lineHeight: '40px',
-                  borderRadius: 20,
+                  borderRadius: '50%',
                   backgroundColor: '#1088e9dd',
                   color: '#fff',
                   textAlign: 'center',
@@ -88,8 +101,6 @@ const ReadmeComponent = (props: {
           <Skeleton loading={loading} active />
           <Skeleton loading={loading} active />
           <Skeleton loading={loading} active />
-
-
         </>
       )
       }

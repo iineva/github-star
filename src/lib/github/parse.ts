@@ -1,4 +1,4 @@
-import { Repository } from "./types"
+import { Repository } from "./graphql"
 
 const forEach = (node: Element | null, cb: (n: Element) => void) => {
   if (!node) {
@@ -11,7 +11,10 @@ const forEach = (node: Element | null, cb: (n: Element) => void) => {
 }
 
 const githubUrl = (uri: string, repo: Repository) => {
-  const base = `https://github.com/${repo.owner.login}/${repo.name}/raw/${repo.default_branch}/`
+  if (uri.startsWith('/')) {
+    uri = uri.substring(1)
+  }
+  const base = `https://github.com/${repo.owner.login}/${repo.name}/raw/${repo.defaultBranchRef.name}/`
   const url = new URL(uri, base)
   return url.href
 }

@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Layout, Divider,
+  Button,
 } from 'antd'
 import {
   MenuUnfoldOutlined, MenuFoldOutlined,
@@ -12,58 +13,85 @@ import TagList from './pages/TagList'
 import RepositoryList from './pages/RepositoryList'
 import Readme from './pages/Readme'
 
-import { Repository } from './lib/github/types'
-import userStars from './data/user-stars.json'
+import { oauth } from './lib/github/oauth'
+import { fetchAllUserStars, StarredRepositoryEdge } from './lib/github/graphql'
 
 const { Header, Sider } = Layout
 
 
-class App extends React.Component<{}, {
-  collapsed: boolean
-  reloading: boolean
-  stars: Repository[]
-  selectedRepository: Repository | undefined
-}> {
+const App = () => {
 
-  state = {
-    collapsed: false,
-    reloading: false,
-    stars: [],
-    groups: [{
-      title: 'tags',
-      tags: ['iOS', 'Android', 'React', 'React Native']
-    }, {
-      title: 'languages',
-      tags: ['Object-C', 'Java', 'JavaScript']
-    }, {
-      title: 'default tags',
-      tags: ['iOS', 'Android', 'React Native']
-    }],
-    selectedRepository: undefined
-  }
+  const [collapseState, setCollapseState] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [stars, setStars] = useState<StarredRepositoryEdge[]>([])
+  const [groups, setGroups] = useState([{
+    title: 'tags',
+    tags: ['iOS', 'Android', 'React', 'React Native']
+  }, {
+    title: 'languages',
+    tags: ['Object-C', 'Java', 'JavaScript']
+  }, {
+    title: 'default tags',
+    tags: ['iOS', 'Android', 'React Native']
+  }])
+  const [selectedRepository, setSelectedRepository] = useState<StarredRepositoryEdge>()
 
-  toggle = () => {
-    this.setState({
-      collapsed: !this.state.collapsed,
-    })
-  }
-
-  componentDidMount() {
+  const load = async () => {
     // TODO: data from api
     // github.userStars('iineva', 2).then((stars: Repository[]) => {
     //   this.setState({ stars: stars })
     // })
-    this.setState({ stars: userStars })
+
+    setLoading(true)
+
+    let list: StarredRepositoryEdge[] = []
+    const stars = await fetchAllUserStars(l => {
+      list = [...list, ...l]
+      setStars(list)
+    })
+    // console.log(stars)
+    // window.localStorage.setItem('test', JSON.stringify(list))
+    // setStars(stars)
+    setLoading(false)
   }
 
-  render = () => (
+  useEffect(() => {
+    load()
+  }, [])
+
+  const toggle = () => {
+    let state = collapseState + 1
+    if (state >= 3) {
+      state = 0
+    }
+    setCollapseState(state)
+  }
+
+  return (
     <Layout>
+
+      <Header style={{
+        padding: '0 20px',
+        background: '#fff',
+        // color: '#fff',
+        // position: 'fixed', zIndex: 1, width: '100%'
+      }}>
+        {React.createElement(collapseState === 2 ? MenuUnfoldOutlined : MenuFoldOutlined, {
+          className: 'trigger',
+          onClick: toggle,
+        })}
+
+        <Button onClick={oauth}>
+          Login GitHub
+        </Button>
+
+      </Header>
 
       {/* all tags */}
       <Sider
         trigger={null}
         collapsible
-        collapsed={this.state.collapsed}
+        collapsed={collapseState > 0}
         collapsedWidth={0}
         width={300}
         theme='light'
@@ -76,27 +104,29 @@ class App extends React.Component<{}, {
           borderRightStyle: 'solid',
         }}
       >
-        <TagList reloading={this.state.reloading} groups={this.state.groups} onReloadClick={() => {
-          this.setState({ reloading: !this.state.reloading })
-        }} />
+        <TagList loading={loading} groups={groups} onReloadClick={load} />
       </Sider>
 
       {/* repository list */}
       <Sider
+        trigger={null}
         theme='light'
         width={350}
         collapsible
-        collapsed={this.state.collapsed}
+        collapsed={collapseState > 1}
         collapsedWidth={0}
         style={{
           overflow: 'auto',
           height: '100vh',
           left: 0,
+          borderRightWidth: 1,
+          borderRightColor: '#ddd',
+          borderRightStyle: 'solid',
         }}
       >
         <Divider orientation="left">Repository</Divider>
-        <RepositoryList list={this.state.stars} onItemSelected={(index: number) => {
-          this.setState({ selectedRepository: this.state.stars[index] })
+        <RepositoryList loading={loading} list={stars} onItemSelected={(index: number) => {
+          setSelectedRepository(stars[index])
         }} />
       </Sider>
 
@@ -109,13 +139,7 @@ class App extends React.Component<{}, {
           background: '#fff',
         }}
       >
-        <Header style={{ padding: '0 20px', background: '#fff' }}>
-          {React.createElement(this.state.collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
-            className: 'trigger',
-            onClick: this.toggle,
-          })}
-        </Header>
-        <Readme repo={this.state.selectedRepository} />
+        <Readme repo={selectedRepository} />
       </Layout>
 
     </Layout>

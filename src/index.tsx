@@ -4,8 +4,27 @@ import './index.css'
 import App from './App'
 import reportWebVitals from './reportWebVitals'
 import initMarkdownAnchors from './lib/anchor'
+import moment from 'moment'
 
 initMarkdownAnchors()
+moment.locale('en', {
+  relativeTime: {
+    future: 'in %s',
+    past: '%s ago',
+    s: 's',
+    ss: '%ss',
+    m: '1m',
+    mm: '%dm',
+    h: '1h',
+    hh: '%dh',
+    d: '1d',
+    dd: '%dd',
+    M: '1m',
+    MM: '%dm',
+    y: '1y',
+    yy: '%dy'
+  }
+})
 
 ReactDOM.render(
   <React.StrictMode>
