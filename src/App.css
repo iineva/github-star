@@ -3,3 +3,29 @@
 .ant-menu-item a::before {
     position: relative;
 }
+
+.repo-desc {
+    word-wrap: break-word;
+    color: gray;
+    white-space: normal;
+    line-height: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 10;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.repo-list {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.repo-list-container:focus {
+    outline: none;
+}
+
+.ant-menu .ant-menu-item {
+    /* height: 100%; */
+    /* margin: 0; */
+}

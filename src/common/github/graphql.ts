@@ -147,9 +147,9 @@ export type UserStarsResult = {
   }
 }
 
-export async function fetchUserStars(after?: string) {
+export async function fetchUserStars(first: number = 100, after?: string) {
   return await request<UserStarsResult>(`#graphql
-query UserStarred($after: String) {
+query UserStarred($after: String, $first: Int!) {
   rateLimit {
     limit
     cost
@@ -157,7 +157,7 @@ query UserStarred($after: String) {
     resetAt
   }
   viewer {
-    stars: starredRepositories(first: 100, orderBy: {field: STARRED_AT, direction: DESC}, after: $after) {
+    stars: starredRepositories(first: $first, orderBy: {field: STARRED_AT, direction: DESC}, after: $after) {
       ...comparisonFields
     }
   }
@@ -230,13 +230,13 @@ fragment comparisonFields on StarredRepositoryConnection {
   }
 }
   `, {
-    after: after,
+    after, first,
   })
 }
 
 export async function fetchAllUserStars(progress?: (list: StarredRepositoryEdge[]) => void, after?: string): Promise<StarredRepositoryEdge[]> {
 
-  const result = await fetchUserStars(after)
+  const result = await fetchUserStars(after ? 100 : 10, after)
 
   // handle errors
   if (result.errors || !result.data) {

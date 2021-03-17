@@ -1,5 +1,5 @@
+import { ReactChild, ReactNode, FunctionComponent, CSSProperties, useState } from 'react'
 import {
-  Menu,
   Skeleton,
 } from 'antd'
 import {
@@ -11,9 +11,14 @@ import {
 } from '@ant-design/icons'
 import moment from 'moment'
 
+import List from 'react-virtualized/dist/commonjs/List'
+import CellMeasurer from 'react-virtualized/dist/commonjs/CellMeasurer'
+import AutoSizer from 'react-virtualized/dist/commonjs/AutoSizer'
+import { CellMeasurerCache } from 'react-virtualized'
+import 'react-virtualized/styles.css'
+
 import { kFormatter } from '../common/string'
 import { Repository, StarredRepositoryEdge } from '../common/github/graphql'
-import { ReactChild, ReactNode, FunctionComponent } from 'react'
 import Color from 'color'
 
 const DEFAULT_COLOR = 'gray'
@@ -53,14 +58,25 @@ const TagIcon = (props: {
 const RepositoryItem = (props: {
   repo: Repository
   onClick: () => void
+  selected?: boolean
 }) => (
-  <div onClick={props.onClick}>
+  <div
+    onClick={props.onClick}
+    className={props.selected ? 'ant-menu-item ant-menu-item-only-child ant-menu-item-selected' : 'ant-menu-item'}
+    style={{
+      // padding: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: '#ddd5',
+      borderBottomStyle: 'solid',
+      height: '100%',
+      // margin: 0,
+    }}>
     <div>{props.repo.nameWithOwner}</div>
-    <p style={{ wordWrap: 'break-word', color: 'gray', whiteSpace: 'normal', lineHeight: 'normal' }}>
+    <p className='repo-desc'>
       {props.repo.description}
     </p>
     <div style={{ display: 'flex', color: 'gray' }}>
-      <div style={{ flex: 1, fontSize: 8, alignItems: 'center' }} >
+      <div style={{ flex: 1, fontSize: 12, alignItems: 'center' }} >
         {props.repo.primaryLanguage && (
           <TagIcon icon={(
             <Circular color={props.repo.primaryLanguage.color || DEFAULT_COLOR} />
@@ -96,42 +112,81 @@ const RepositoryItem = (props: {
   </div>
 )
 
+const _cache = new CellMeasurerCache({
+  fixedWidth: true,
+  minHeight: 100,
+})
+
+// const _rowRenderer = (list: StarredRepositoryEdge[]) => 
+
 const RepositoryList = (props: {
   loading: boolean
   list: StarredRepositoryEdge[]
   onItemSelected: (index: number) => void
 }) => {
 
+  const [selectedIndex, setSelectedIndex] = useState(0)
   const loading = props.loading && props.list.length === 0
 
   return (
     <div style={{
-      padding: loading ? 20 : 0,
-    }}>
-      <Skeleton loading={loading} active>
-        <Menu
-          mode={'inline'}
-          theme={'light'}
-        >
-          {props.list.map((item: StarredRepositoryEdge, i: number) => (
-            <Menu.Item
-              key={i}
-              style={{
-                height: 'auto',
-                padding: '0 12px',
-                margin: 0,
-                borderBottomColor: '#eee',
-                borderBottomStyle: 'solid',
-                borderBottomWidth: 1,
-              }}>
-              <RepositoryItem repo={item.node} onClick={() => props.onItemSelected(i)} />
-            </Menu.Item>
-          ))}
-        </Menu>
-      </Skeleton>
-      <Skeleton loading={loading} active />
-      <Skeleton loading={loading} active />
-      <Skeleton loading={loading} active />
+      // height: '100%',
+      // display: 'flex',
+      flex: 1,
+    }} className="xxxx">
+      <AutoSizer>
+        {({ height, width }) => (
+          <div style={{
+            padding: loading ? 20 : 0,
+            height,
+            width,
+          }}>
+            <Skeleton loading={loading} active>
+              <List
+                width={width}
+                height={height}
+                style={{
+                  border: 'none',
+                }}
+                className='repo-list-container ant-menu ant-menu-light ant-menu-root ant-menu-inline'
+                rowCount={props.list.length}
+                rowHeight={_cache.rowHeight}
+                deferredMeasurementCache={_cache}
+                rowRenderer={({ key, index, style, parent }) => {
+                  return (
+                    <CellMeasurer
+                      cache={_cache}
+                      columnIndex={0}
+                      key={key}
+                      rowIndex={index}
+                      parent={parent}
+                    >
+                      {({ measure, registerChild }) => (
+                        // @ts-ignore
+                        <div ref={registerChild} style={style}>
+                          <RepositoryItem
+                            key={key}
+                            selected={index === selectedIndex}
+                            repo={props.list[index].node}
+                            onClick={() => {
+                              console.log(selectedIndex, index)
+                              setSelectedIndex(index)
+                              props.onItemSelected(index)
+                            }}
+                          />
+                        </div>
+                      )}
+                    </CellMeasurer>
+                  )
+                }}
+              />
+            </Skeleton>
+            <Skeleton loading={loading} active />
+            <Skeleton loading={loading} active />
+            <Skeleton loading={loading} active />
+          </div>
+        )}
+      </AutoSizer>
     </div>
   )
 }

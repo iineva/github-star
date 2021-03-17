@@ -37,13 +37,7 @@ const App = () => {
   const [selectedRepository, setSelectedRepository] = useState<StarredRepositoryEdge>()
 
   const load = async () => {
-    // TODO: data from api
-    // github.userStars('iineva', 2).then((stars: Repository[]) => {
-    //   this.setState({ stars: stars })
-    // })
-
     setLoading(true)
-
     let list: StarredRepositoryEdge[] = []
     await fetchAllUserStars(l => {
       list = [...list, ...l]
@@ -70,22 +64,23 @@ const App = () => {
   return (
     <Layout>
 
-      <Header style={{
-        padding: '0 20px',
-        background: '#fff',
-        // color: '#fff',
-        // position: 'fixed', zIndex: 1, width: '100%'
-      }}>
-        {React.createElement(collapseState === 2 ? MenuUnfoldOutlined : MenuFoldOutlined, {
-          className: 'trigger',
-          onClick: toggle,
-        })}
-
-        <Button onClick={oauth}>
+      <div>
+        <Header style={{
+          padding: '0 20px',
+          background: '#fff',
+          // color: '#fff',
+          // position: 'fixed', zIndex: 1, width: '100%'
+          flexDirection: 'column',
+        }}>
+          {React.createElement(collapseState === 2 ? MenuUnfoldOutlined : MenuFoldOutlined, {
+            className: 'trigger',
+            onClick: toggle,
+          })}
+        </Header>
+        <Button onClick={oauth} style={{ margin: 12 }} type='primary'>
           Login GitHub
         </Button>
-
-      </Header>
+      </div>
 
       {/* all tags */}
       <Sider
@@ -100,7 +95,7 @@ const App = () => {
           height: '100vh',
           left: 0,
           borderRightWidth: 1,
-          borderRightColor: '#ddd',
+          borderRightColor: '#ddd5',
           borderRightStyle: 'solid',
         }}
       >
@@ -118,16 +113,17 @@ const App = () => {
         style={{
           overflow: 'auto',
           height: '100vh',
-          left: 0,
           borderRightWidth: 1,
           borderRightColor: '#ddd',
           borderRightStyle: 'solid',
         }}
       >
-        <Divider orientation="left">Repository</Divider>
-        <RepositoryList loading={loading} list={stars} onItemSelected={(index: number) => {
-          setSelectedRepository(stars[index])
-        }} />
+        <div className='repo-list'>
+          <Divider orientation="left">Repository</Divider>
+          <RepositoryList loading={loading} list={stars} onItemSelected={(index: number) => {
+            setSelectedRepository(stars[index])
+          }} />
+        </div>
       </Sider>
 
       {/* readme content */}

@@ -1,6 +1,7 @@
 
 import { Repository } from './graphql'
 import { request } from '@octokit/request'
+import { getAccessToken } from './oauth'
 import renderGitHubURL from './parse'
 
 export const user = (login: string) => request('GET /users/{login}', {
@@ -13,13 +14,21 @@ export const userStars = (login: string, page: number = 1) =>
     page,
   }).then(json => json.data)
 
-export const readmeToHTML = (repo: Repository, text: string) => request('POST /markdown', { text: text })
-  .then(json => json.data)
-  .then(readmeHTML => {
-    const domparser = new DOMParser()
-    const doc = domparser.parseFromString(readmeHTML, 'text/html')
-    return renderGitHubURL(doc.body, repo)
+export const readmeToHTML = (repo: Repository, text: string) => {
+  const REACT_APP_GITHUB_AUTH_TOKEN = getAccessToken()
+  return request('POST /markdown', {
+    text: text,
+    headers: {
+      authorization: `bearer ${REACT_APP_GITHUB_AUTH_TOKEN.access_token}`,
+    },
   })
+    .then(json => json.data)
+    .then(readmeHTML => {
+      const domparser = new DOMParser()
+      const doc = domparser.parseFromString(readmeHTML, 'text/html')
+      return renderGitHubURL(doc.body, repo)
+    })
+}
 
 const github = {
   user,

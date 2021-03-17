@@ -6,6 +6,7 @@ import {
   SyncOutlined,
 } from '@ant-design/icons'
 import { languageColor } from '../common/github/colors'
+import Color from 'color'
 
 const { Panel } = Collapse
 
@@ -42,7 +43,11 @@ const TagList = (props: {
       {props.groups.map((g, i) => (
         <Panel header={g.title} style={{ textTransform: 'uppercase', fontWeight: 'bold' }} key={i}>
           {g.tags.map((t, j) => (
-            <Tag key={j} color={computeTagColor(t)} style={{ textTransform: 'none' }}>{t}</Tag>
+            <Tag key={j} color={computeTagColor(t)} style={{
+              textTransform: 'none',
+              borderWidth: 1,
+              borderColor: Color(computeTagColor(t)).lighten(-0.2).string(),
+            }}>{t}</Tag>
           ))}
         </Panel>
       ))}

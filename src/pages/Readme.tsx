@@ -4,7 +4,6 @@ import {
   Skeleton,
   BackTop,
 } from 'antd'
-
 import {
   VerticalAlignTopOutlined,
 } from '@ant-design/icons'
