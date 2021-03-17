@@ -38,7 +38,10 @@ export async function request<T>(text: string, variables?: Object): Promise<Grap
 export type ReadmeResult = {
   repository: {
     README_md?: { text: string }
+    README_MD?: { text: string }
+    Readme_md?: { text: string }
     readme_md?: { text: string }
+    README?: { text: string }
     readme?: { text: string }
   }
 }
@@ -55,7 +58,22 @@ query RepoMarkdown($owner: String!, $name: String!) {
         text
       }
     }
+    README_MD: object(expression: "HEAD:README.MD") {
+      ... on Blob {
+        text
+      }
+    }
+    Readme_md: object(expression: "HEAD:Readme.md") {
+      ... on Blob {
+        text
+      }
+    }
     readme_md: object(expression: "HEAD:readme.md") {
+      ... on Blob {
+        text
+      }
+    }
+    README: object(expression: "HEAD:README") {
       ... on Blob {
         text
       }
@@ -150,12 +168,6 @@ export type UserStarsResult = {
 export async function fetchUserStars(first: number = 100, after?: string) {
   return await request<UserStarsResult>(`#graphql
 query UserStarred($after: String, $first: Int!) {
-  rateLimit {
-    limit
-    cost
-    remaining
-    resetAt
-  }
   viewer {
     stars: starredRepositories(first: $first, orderBy: {field: STARRED_AT, direction: DESC}, after: $after) {
       ...comparisonFields
@@ -236,7 +248,7 @@ fragment comparisonFields on StarredRepositoryConnection {
 
 export async function fetchAllUserStars(progress?: (list: StarredRepositoryEdge[]) => void, after?: string): Promise<StarredRepositoryEdge[]> {
 
-  const result = await fetchUserStars(after ? 100 : 10, after)
+  const result = await fetchUserStars(after ? 100 : 50, after)
 
   // handle errors
   if (result.errors || !result.data) {
@@ -246,13 +258,15 @@ export async function fetchAllUserStars(progress?: (list: StarredRepositoryEdge[
 
   // TODO: store data
   let list = result.data.viewer.stars.edges
-  if (result.data.viewer.stars.pageInfo.hasNextPage) {
-    progress && progress(list)
-    const l = await fetchAllUserStars(progress, result.data.viewer.stars.pageInfo.endCursor)
-    list = [...list, ...l]
-  } else {
-    progress && progress(list)
-  }
+  // TODO:
+  progress && progress(list)
+  // if (result.data.viewer.stars.pageInfo.hasNextPage) {
+  //   progress && progress(list)
+  //   const l = await fetchAllUserStars(progress, result.data.viewer.stars.pageInfo.endCursor)
+  //   list = [...list, ...l]
+  // } else {
+  //   progress && progress(list)
+  // }
 
   return list
 }

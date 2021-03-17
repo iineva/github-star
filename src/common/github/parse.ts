@@ -10,16 +10,20 @@ const forEach = (node: Element | null, cb: (n: Element) => void) => {
   }
 }
 
-const githubUrl = (uri: string, repo: Repository) => {
+export const githubBaseUrl = (repo: Repository, blob?: boolean) => {
+  return `https://github.com/${repo.owner.login}/${repo.name}/${blob ? 'blob' : 'raw'}/${repo.defaultBranchRef.name}/`
+}
+
+export const githubUrl = (uri: string, repo: Repository, blob?: boolean) => {
   if (uri.startsWith('/')) {
     uri = uri.substring(1)
   }
-  const base = `https://github.com/${repo.owner.login}/${repo.name}/raw/${repo.defaultBranchRef.name}/`
+  const base = githubBaseUrl(repo, blob)
   const url = new URL(uri, base)
   return url.href
 }
 
-const renderGitHubURL = (node: HTMLElement, repo: Repository) => {
+const renderGitHubURLNode = (node: HTMLElement, repo: Repository) => {
   forEach(node, (c) => {
     if (c.tagName.toLowerCase() === 'img') {
       const uri = c.getAttribute('src')
@@ -28,9 +32,10 @@ const renderGitHubURL = (node: HTMLElement, repo: Repository) => {
       }
     }
     if (c.tagName.toLowerCase() === 'a') {
-      const uri = c.getAttribute('href')
+      let uri = c.getAttribute('href')
       if (uri && !uri.startsWith('http') && !uri.startsWith('#')) {
-        c.setAttribute('href', githubUrl(uri, repo))
+        uri = githubUrl(uri, repo, true)
+        c.setAttribute('href', uri)
       }
       // use new window to open outlink
       if (uri && uri.startsWith('http')) {
@@ -40,6 +45,12 @@ const renderGitHubURL = (node: HTMLElement, repo: Repository) => {
     }
   })
   return node.innerHTML
+}
+
+export const renderGitHubURL = (html: string, repo: Repository) => {
+  const domparser = new DOMParser()
+  const doc = domparser.parseFromString(html, 'text/html')
+  return renderGitHubURLNode(doc.body, repo)
 }
 
 export default renderGitHubURL

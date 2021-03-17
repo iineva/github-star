@@ -24,11 +24,10 @@ export const readmeToHTML = (repo: Repository, text: string) => {
   })
     .then(json => json.data)
     .then(readmeHTML => {
-      const domparser = new DOMParser()
-      const doc = domparser.parseFromString(readmeHTML, 'text/html')
-      return renderGitHubURL(doc.body, repo)
+      return renderGitHubURL(readmeHTML, repo)
     })
 }
+
 
 const github = {
   user,

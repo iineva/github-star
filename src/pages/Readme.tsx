@@ -7,10 +7,20 @@ import {
 import {
   VerticalAlignTopOutlined,
 } from '@ant-design/icons'
+import marked from 'marked'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/github.css'
 
-import github from '../common/github'
 import { fetchREADME } from '../common/github/graphql'
+import { githubUrl, githubBaseUrl, renderGitHubURL } from '../common/github/parse'
 import { StarredRepositoryEdge } from '../common/github/graphql'
+
+const updateCodeSyntaxHighlighting = () => {
+  document.querySelectorAll("pre code").forEach(block => {
+    // @ts-ignore
+    hljs.highlightBlock(block)
+  })
+}
 
 const readmeCache: {
   [key: string]: string
@@ -54,12 +64,19 @@ const ReadmeComponent = (props: {
         throw new Error('error!!')
       }
 
-      const r = (readme.data.repository.README_md || readme.data.repository.readme_md || readme.data.repository.readme) || { text: '' }
-      const html = await github.readmeToHTML(repo, r.text)
+      const r = ((
+        readme.data.repository.README_md ||
+        readme.data.repository.README_MD ||
+        readme.data.repository.Readme_md ||
+        readme.data.repository.readme_md ||
+        readme.data.repository.README ||
+        readme.data.repository.readme
+      ) || { text: '' }).text
       const key = repo.nameWithOwner || ''
-      readmeCache[key] = html
-      setMarkdown(html)
+      readmeCache[key] = renderGitHubURL(marked(r), repo)
+      setMarkdown(readmeCache[key])
       setLoading(false)
+      updateCodeSyntaxHighlighting()
     })()
   }, [props.repo])
 

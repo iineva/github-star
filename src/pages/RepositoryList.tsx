@@ -1,4 +1,4 @@
-import { ReactChild, ReactNode, FunctionComponent, CSSProperties, useState } from 'react'
+import { ReactChild, ReactNode, FunctionComponent, useState } from 'react'
 import {
   Skeleton,
 } from 'antd'
@@ -169,7 +169,6 @@ const RepositoryList = (props: {
                             selected={index === selectedIndex}
                             repo={props.list[index].node}
                             onClick={() => {
-                              console.log(selectedIndex, index)
                               setSelectedIndex(index)
                               props.onItemSelected(index)
                             }}
