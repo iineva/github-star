@@ -5,28 +5,12 @@ import {
 import {
   SyncOutlined,
 } from '@ant-design/icons'
-import { stringToNumbers } from '../lib/string'
-import { languageColor } from '../lib/github/colors'
+import { languageColor } from '../common/github/colors'
 
 const { Panel } = Collapse
 
-const tagColors = [
-  "magenta",
-  "red",
-  "volcano",
-  "orange",
-  "gold",
-  "lime",
-  "green",
-  "cyan",
-  "blue",
-  "geekblue",
-  "purple",
-]
-
 const computeTagColor = (s: string): string => {
   return languageColor(s).color
-  // return stringToNumbers(s || ' ').reduce((l, r) => l + r) % tagColors.length
 }
 
 const TagList = (props: {

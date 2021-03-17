@@ -13,8 +13,8 @@ import TagList from './pages/TagList'
 import RepositoryList from './pages/RepositoryList'
 import Readme from './pages/Readme'
 
-import { oauth } from './lib/github/oauth'
-import { fetchAllUserStars, StarredRepositoryEdge } from './lib/github/graphql'
+import { oauth } from './common/github/oauth'
+import { fetchAllUserStars, StarredRepositoryEdge } from './common/github/graphql'
 
 const { Header, Sider } = Layout
 
@@ -45,7 +45,7 @@ const App = () => {
     setLoading(true)
 
     let list: StarredRepositoryEdge[] = []
-    const stars = await fetchAllUserStars(l => {
+    await fetchAllUserStars(l => {
       list = [...list, ...l]
       setStars(list)
     })

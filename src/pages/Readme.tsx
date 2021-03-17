@@ -9,9 +9,9 @@ import {
   VerticalAlignTopOutlined,
 } from '@ant-design/icons'
 
-import github from '../lib/github'
-import { fetchREADME } from '../lib/github/graphql'
-import { StarredRepositoryEdge } from '../lib/github/graphql'
+import github from '../common/github'
+import { fetchREADME } from '../common/github/graphql'
+import { StarredRepositoryEdge } from '../common/github/graphql'
 
 const readmeCache: {
   [key: string]: string

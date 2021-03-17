@@ -11,9 +11,9 @@ import {
 } from '@ant-design/icons'
 import moment from 'moment'
 
-import { kFormatter } from '../lib/string'
-import { Repository, StarredRepositoryEdge } from '../lib/github/graphql'
-import { ReactChild, ReactNode, FunctionComponent, useState } from 'react'
+import { kFormatter } from '../common/string'
+import { Repository, StarredRepositoryEdge } from '../common/github/graphql'
+import { ReactChild, ReactNode, FunctionComponent } from 'react'
 import Color from 'color'
 
 const DEFAULT_COLOR = 'gray'
