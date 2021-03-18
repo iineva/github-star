@@ -12,14 +12,17 @@ import marked from 'marked'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 
-import { fetchRootFiles, fetchTextFile, FileInfo } from '../common/github/graphql'
+import { fetchRootFiles, fetchTextFile, FileInfo, StarredRepositoryEdge } from '../common/github/graphql'
 import { renderGitHubURL } from '../common/github/parse'
-import { StarredRepositoryEdge } from '../common/github/graphql'
+import { readmeToHTML } from '../common/github'
+import { } from '../common/github/graphql'
 
-const DOC_EXTS = ['.markdown', '.mdown', '.mkdn', '.md',
-  '.textile', '.rdoc', '.org', '.creole',
-  '.mediawiki', 'wiki', '.rst',
-  '.asciidoc', 'adoc', 'asc', '.pod']
+const DOC_EXTS = [
+  ['.markdown', '.mdown', '.mkdn', '.md'],
+  ['.textile', '.rdoc', '.org', '.creole',
+    '.mediawiki', 'wiki', '.rst',
+    '.asciidoc', 'adoc', 'asc', '.pod'],
+]
 
 const updateCodeSyntaxHighlighting = () => {
   document.querySelectorAll("pre code").forEach(block => {
@@ -61,18 +64,25 @@ const ReadmeComponent = (props: {
     const repo = props.repo.node
     const README_CACKE_KEY = `README_CACKE_KEY:${repo.nameWithOwner}:${file.path}`
     // match cache
-    let readmeData = readmeCache.file[README_CACKE_KEY]
-    if (!readmeData) {
+    let readmeDataHTML = readmeCache.file[README_CACKE_KEY]
+    if (!readmeDataHTML) {
       const readme = await fetchTextFile(repo.owner.login, repo.name, file.path)
       if (!readme.data) {
         throw new Error('error!!')
       }
-      const r = readme.data.repository.file ? readme.data.repository.file.text : ''
-      readmeData = renderGitHubURL(marked(r), repo)
-      readmeCache.file[README_CACKE_KEY] = readmeData
+      // parse doc file
+      let r = readme.data.repository.file ? readme.data.repository.file.text : ''
+      if (DOC_EXTS[0].find(ex => file.name.toLocaleLowerCase().endsWith(ex)) || file.name.toLocaleLowerCase() === 'readme') {
+        // parse markdown local
+        readmeDataHTML = marked(r)
+      } else {
+        // TODO: parse other docs
+        readmeDataHTML = marked(r)
+      }
+      readmeCache.file[README_CACKE_KEY] = renderGitHubURL(readmeDataHTML, repo)
     }
 
-    setMarkdown(readmeData)
+    setMarkdown(readmeDataHTML)
     setLoading(false)
     updateCodeSyntaxHighlighting()
   }
@@ -105,7 +115,7 @@ const ReadmeComponent = (props: {
 
         files = rootFiles.data.repository.files.entries.filter(row => {
           if (row.type !== 'blob') return false
-          if (DOC_EXTS.find(ex => row.name.toLowerCase().endsWith(ex))) return true
+          if ([...DOC_EXTS[0], ...DOC_EXTS[1]].find(ex => row.name.toLowerCase().endsWith(ex))) return true
           return false
         })
         files = [...files.filter(row => {
@@ -141,7 +151,7 @@ const ReadmeComponent = (props: {
         </div>
       ) : (
         <>
-          <Select value={readmeFile?.path} loading={loadingReadmeFiles} style={{ minWidth: 200, width: 'auto' }} onChange={v => {
+          <Select value={readmeFile?.path} loading={loadingReadmeFiles} style={{ minWidth: 200, width: 'auto', marginBottom: 20 }} onChange={v => {
             selectReadmeFile(readmeFiles.find(r => r.path === v))
           }}>
             {readmeFiles.map((row, i) => (

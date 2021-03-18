@@ -17,7 +17,7 @@ const computeTagColor = (s: string): string => {
 const TagList = (props: {
   loading: boolean
   groups: {
-    title: string
+    name: string
     tags: string[]
   }[]
   onReloadClick: () => void
@@ -41,7 +41,7 @@ const TagList = (props: {
     </Panel>
     <Collapse defaultActiveKey={props.groups.map((row, i) => i)} ghost>
       {props.groups.map((g, i) => (
-        <Panel header={g.title} style={{ textTransform: 'uppercase', fontWeight: 'bold' }} key={i}>
+        <Panel header={g.name} style={{ textTransform: 'uppercase', fontWeight: 'bold' }} key={i}>
           {g.tags.map((t, j) => (
             <Tag key={j} color={computeTagColor(t)} style={{
               textTransform: 'none',

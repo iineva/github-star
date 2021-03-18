@@ -15,6 +15,7 @@ import Readme from './pages/Readme'
 
 import { oauth } from './common/github/oauth'
 import { fetchAllUserStars, StarredRepositoryEdge } from './common/github/graphql'
+import { DB } from './common/github/cache'
 
 const { Header, Sider } = Layout
 
@@ -25,28 +26,52 @@ const App = () => {
   const [loading, setLoading] = useState(true)
   const [stars, setStars] = useState<StarredRepositoryEdge[]>([])
   const [groups, setGroups] = useState([{
-    title: 'tags',
+    name: 'tags',
     tags: ['iOS', 'Android', 'React', 'React Native']
   }, {
-    title: 'languages',
+    name: 'languages',
     tags: ['Object-C', 'Java', 'JavaScript']
   }, {
-    title: 'default tags',
+    name: 'topics',
     tags: ['iOS', 'Android', 'React Native']
   }])
   const [selectedRepository, setSelectedRepository] = useState<StarredRepositoryEdge>()
 
-  const load = async () => {
-    setLoading(true)
-    let list: StarredRepositoryEdge[] = []
-    await fetchAllUserStars(l => {
-      list = [...list, ...l]
-      setStars(list)
+  const load = async (userClick?: boolean) => {
+
+    const count = await DB.stars.count({
+      _cache: false,
     })
-    // console.log(stars)
-    // window.localStorage.setItem('test', JSON.stringify(list))
-    // setStars(stars)
-    setLoading(false)
+
+    // update UI
+    setLoading(true)
+
+    // load all from cache
+    if (count && !userClick) {
+      const stars = await DB.stars.find<StarredRepositoryEdge>({}).sort({
+        starredAt: -1
+      })
+      console.info('cache matched!', stars[0])
+      setStars(stars)
+      setLoading(false)
+      return
+    }
+
+    try {
+      let list: StarredRepositoryEdge[] = []
+      await fetchAllUserStars(async l => {
+        // callback per request
+        list = [...list, ...l]
+        setStars(list)
+      })
+
+      // update UI
+      setLoading(false)
+    } catch (err) {
+      console.error('loading stars error:', err)
+      setLoading(false)
+    }
+
   }
 
   useEffect(() => {
@@ -99,7 +124,9 @@ const App = () => {
           borderRightStyle: 'solid',
         }}
       >
-        <TagList loading={loading} groups={groups} onReloadClick={load} />
+        <TagList loading={loading} groups={groups} onReloadClick={() => {
+          load(true)
+        }} />
       </Sider>
 
       {/* repository list */}
@@ -119,7 +146,7 @@ const App = () => {
         }}
       >
         <div className='repo-list'>
-          <Divider orientation="left">Repository</Divider>
+          <Divider orientation="left">Repository{stars.length ? `(${stars.length})` : ''}</Divider>
           <RepositoryList loading={loading} list={stars} onItemSelected={(index: number) => {
             setSelectedRepository(stars[index])
           }} />

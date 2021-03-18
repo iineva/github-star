@@ -27,18 +27,35 @@ const renderGitHubURLNode = (node: HTMLElement, repo: Repository) => {
   forEach(node, (c) => {
     if (c.tagName.toLowerCase() === 'img') {
       const uri = c.getAttribute('src')
-      if (uri && !uri.startsWith('http')) {
+      if (!uri) {
+        return
+      }
+      if (!uri.startsWith('http')) {
         c.setAttribute('src', githubUrl(uri, repo))
+      } else {
+        // https://github.com/user/project-name/blob/master/path/to/file.ext
+        // to
+        // https://github.com/user/project-name/raw/master/path/to/file.ext
+        const u = new URL(uri)
+        const p = u.pathname.split('/')
+        if (u.hostname === 'github.com' && p.length >= 6 && p[3] === 'blob') {
+          p[3] = 'raw'
+          u.pathname = p.join('/')
+        }
+        c.setAttribute('src', u.toString())
       }
     }
     if (c.tagName.toLowerCase() === 'a') {
       let uri = c.getAttribute('href')
-      if (uri && !uri.startsWith('http') && !uri.startsWith('#')) {
+      if (!uri) {
+        return
+      }
+      if (!uri.startsWith('http') && !uri.startsWith('#')) {
         uri = githubUrl(uri, repo, true)
         c.setAttribute('href', uri)
       }
       // use new window to open outlink
-      if (uri && uri.startsWith('http')) {
+      if (uri.startsWith('http')) {
         c.setAttribute('target', '_blank')
         c.setAttribute('rel', 'noreferrer')
       }

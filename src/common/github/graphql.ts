@@ -1,4 +1,5 @@
 import { getAccessToken } from './oauth'
+import { DB } from './cache'
 
 export type GraphQLResult<T> = {
   data?: T
@@ -87,6 +88,7 @@ query rootFiles($owner: String!, $name: String!) {
 }
 
 export type Repository = {
+  id: string
   url: string
   name: string
   nameWithOwner: string
@@ -143,6 +145,10 @@ export type Repository = {
 }
 
 export type StarredRepositoryEdge = {
+  _id?: string // not from github api: for nedb ID
+  _cache?: boolean // not from github api: for temp cache sign
+
+  cursor: string
   starredAt: string
   node: Repository
 }
@@ -181,8 +187,10 @@ fragment comparisonFields on StarredRepositoryConnection {
     hasNextPage
   }
   edges {
+    cursor
     starredAt
     node {
+      id
       url
       name
       nameWithOwner
@@ -244,27 +252,53 @@ fragment comparisonFields on StarredRepositoryConnection {
   })
 }
 
-export async function fetchAllUserStars(progress?: (list: StarredRepositoryEdge[]) => void, after?: string): Promise<StarredRepositoryEdge[]> {
+export async function fetchAllUserStars(progress?: (list: StarredRepositoryEdge[]) => Promise<void>, after?: string): Promise<StarredRepositoryEdge[]> {
 
-  const result = await fetchUserStars(after ? 100 : 50, after)
+  async function fetchData(after?: string): Promise<StarredRepositoryEdge[]> {
 
-  // handle errors
-  if (result.errors || !result.data) {
-    if (result.errors) console.error(...result.errors)
-    throw new Error('Error: reloadStars fail.')
+    // first page 20 for speed up UI update.
+    const result = await fetchUserStars(after ? 100 : 20, after)
+
+    // handle errors
+    if (result.errors || !result.data) {
+      if (result.errors) console.error(...result.errors)
+      throw new Error('Error: reloadStars fail.')
+    }
+
+    let list = result.data.viewer.stars.edges
+
+    // call back to update UI
+    progress && (await progress(list))
+
+    // insert cache
+    await DB.stars.insert<Array<StarredRepositoryEdge>>(list.map(row => {
+      row._cache = true
+      return row
+    }))
+
+    // request next page
+    if (result.data.viewer.stars.pageInfo.hasNextPage) {
+      const l = await fetchData(result.data.viewer.stars.pageInfo.endCursor)
+      list = [...list, ...l]
+    }
+
+    return list
   }
 
-  // TODO: store data
-  let list = result.data.viewer.stars.edges
-  // TODO:
-  progress && progress(list)
-  // if (result.data.viewer.stars.pageInfo.hasNextPage) {
-  //   progress && progress(list)
-  //   const l = await fetchAllUserStars(progress, result.data.viewer.stars.pageInfo.endCursor)
-  //   list = [...list, ...l]
-  // } else {
-  //   progress && progress(list)
-  // }
+  // remove all cache first
+  await DB.stars.remove({ _cache: true }, { multi: true })
+
+  // load all
+  console.info(new Date(), 'loading stars start...')
+  const list = await fetchData()
+  console.info(new Date(), 'loading stars done!')
+
+  // replace cache
+  console.info(new Date(), 'replace cache start...')
+  await DB.stars.remove({ _cache: false }, { multi: true })
+  await DB.stars.update({ _cache: true }, { $set: { _cache: false } }, { multi: true })
+  await DB.stars.load()
+  console.info(new Date(), 'replace cache done!')
 
   return list
 }
