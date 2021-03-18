@@ -35,57 +35,55 @@ export async function request<T>(text: string, variables?: Object): Promise<Grap
   return await response.json()
 }
 
-export type ReadmeResult = {
+export type ResultTextFile = {
   repository: {
-    README_md?: { text: string }
-    README_MD?: { text: string }
-    Readme_md?: { text: string }
-    readme_md?: { text: string }
-    README?: { text: string }
-    readme?: { text: string }
+    file?: { text: string }
   }
 }
 
-export async function fetchREADME(param: {
-  owner: string
-  name: string
-}) {
-  return await request<ReadmeResult>(`#graphql
+export async function fetchTextFile(owner: string, name: string, filePath: string) {
+  return await request<ResultTextFile>(`#graphql
 query RepoMarkdown($owner: String!, $name: String!) {
   repository(owner: $owner, name: $name) {
-    README_md: object(expression: "HEAD:README.md") {
-      ... on Blob {
-        text
-      }
-    }
-    README_MD: object(expression: "HEAD:README.MD") {
-      ... on Blob {
-        text
-      }
-    }
-    Readme_md: object(expression: "HEAD:Readme.md") {
-      ... on Blob {
-        text
-      }
-    }
-    readme_md: object(expression: "HEAD:readme.md") {
-      ... on Blob {
-        text
-      }
-    }
-    README: object(expression: "HEAD:README") {
-      ... on Blob {
-        text
-      }
-    }
-    readme: object(expression: "HEAD:readme") {
+    file: object(expression: "HEAD:${filePath}") {
       ... on Blob {
         text
       }
     }
   }
 }
-  `, param)
+`, { owner, name })
+}
+
+export type FileInfo = {
+  name: string
+  path: string
+  type: string
+}
+export type ResultRootFile = {
+  repository: {
+    files: {
+      entries: FileInfo[]
+    }
+  }
+}
+
+export async function fetchRootFiles(owner: string, name: string) {
+  return await request<ResultRootFile>(`#graphql
+query rootFiles($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    files: object(expression: "HEAD:") {
+      ... on Tree {
+        entries {
+          name
+          path
+          type
+        }
+      }
+    }
+  }
+}
+`, { owner, name })
 }
 
 export type Repository = {
