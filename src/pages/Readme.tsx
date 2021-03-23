@@ -79,7 +79,8 @@ const ReadmeComponent = (props: {
         // TODO: parse other docs
         readmeDataHTML = marked(r)
       }
-      readmeCache.file[README_CACKE_KEY] = renderGitHubURL(readmeDataHTML, repo)
+      readmeDataHTML = renderGitHubURL(readmeDataHTML, repo)
+      readmeCache.file[README_CACKE_KEY] = readmeDataHTML
     }
 
     setMarkdown(readmeDataHTML)
